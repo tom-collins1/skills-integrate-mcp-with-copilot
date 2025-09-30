@@ -3,15 +3,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const activitySelect = document.getElementById("activity");
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
+  const filterForm = document.getElementById("filter-form");
+  const searchName = document.getElementById("search-name");
+  const searchDescription = document.getElementById("search-description");
+  const searchCategory = document.getElementById("search-category");
+  const sortBy = document.getElementById("sort-by");
 
-  // Function to fetch activities from API
-  async function fetchActivities() {
+  // Function to fetch activities from API with filters
+  async function fetchActivities(params = {}) {
     try {
-      const response = await fetch("/activities");
+      // Build query string from params
+      const query = Object.entries(params)
+        .filter(([_, v]) => v)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join("&");
+      const url = query ? `/activities?${query}` : "/activities";
+      const response = await fetch(url);
       const activities = await response.json();
 
-      // Clear loading message
+      // Clear loading message and dropdown
       activitiesList.innerHTML = "";
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
@@ -40,6 +52,8 @@ document.addEventListener("DOMContentLoaded", () => {
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
+          <p><strong>Category:</strong> ${details.category}</p>
+          <p><strong>Date:</strong> ${details.date}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
           <div class="participants-container">
@@ -155,6 +169,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Initialize app
+  // Handle filter form submission
+  filterForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const params = {
+      name: searchName.value,
+      description: searchDescription.value,
+      category: searchCategory.value,
+      sort: sortBy.value,
+    };
+    fetchActivities(params);
+  });
+
+  // Initial load
   fetchActivities();
 });
